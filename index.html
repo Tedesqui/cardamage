@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
         :root {
-            --camera-height: 60vh;
+            --camera-height: 72vh; /* Aumentado em 20% de 60vh */
             --alert-height: 10vh;
             --footer-height: 15vh;
         }
@@ -181,11 +181,12 @@
         const REDIRECT_THRESHOLD = 0.992;
         
         async function init() {
-            // Para a câmera existente antes de iniciar uma nova
+            // CORREÇÃO: Se a webcam já foi iniciada, o botão agora recarrega a página.
             if (webcam) {
-                webcam.stop();
+                window.location.reload();
+                return;
             }
-            // Reseta o estado para permitir um reinício limpo
+            
             isRedirecting = false;
             isPredictionActive = false;
 
@@ -297,12 +298,8 @@
             }
         }
 
-        // CORREÇÃO: Lida com o retorno do usuário para a página após o redirecionamento
         window.addEventListener('pageshow', (event) => {
-            // A propriedade 'persisted' é verdadeira se a página foi restaurada do cache (bfcache).
             if (event.persisted) {
-                // Se a página foi restaurada do cache, recarregá-la garante um estado limpo e funcional.
-                // Esta é a forma mais robusta de garantir que o script seja reiniciado corretamente.
                 window.location.reload();
             }
         });
