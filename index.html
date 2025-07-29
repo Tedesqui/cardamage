@@ -10,7 +10,7 @@
         :root {
             --camera-height: 60vh;
             --alert-height: 10vh;
-            --footer-height: 15vh; /* Aumentado para comportar os botões de zoom */
+            --footer-height: 15vh;
         }
 
         body, html {
@@ -25,7 +25,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* Alinhado ao topo */
+            justify-content: flex-start;
             padding-top: 2vh;
         }
 
@@ -38,7 +38,14 @@
             background: #000;
             position: relative;
             border-radius: 18px;
-            overflow: hidden; /* Garante que o zoom não saia do container */
+            overflow: hidden;
+            transition: height 0.4s ease, width 0.4s ease; /* Transição suave */
+        }
+        
+        /* Nova classe para a área de câmera reduzida */
+        #webcam-container.small-area {
+            height: 40vh; /* Altura menor */
+            width: 70vw;  /* Largura menor para criar um foco */
         }
 
         #webcam-container canvas {
@@ -48,7 +55,7 @@
             border: 4px solid #007bff;
             border-radius: 16px;
             box-sizing: border-box;
-            transition: transform 0.3s ease, border-color 0.5s ease;
+            transition: border-color 0.5s ease;
             transform-origin: center;
         }
 
@@ -84,20 +91,21 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 10px;
+            padding: 15px 10px; /* Aumentado padding vertical */
             box-sizing: border-box;
             background: #1a1a1a;
+            height: var(--footer-height);
         }
 
-        .zoom-buttons {
+        .action-buttons {
             display: flex;
             justify-content: center;
-            margin-bottom: 15px;
-            width: 60%;
+            gap: 15px;
+            width: 90%;
         }
 
         button {
-            height: 50px;
+            height: 55px; /* Altura padronizada */
             font-size: clamp(16px, 4vw, 20px);
             border-radius: 12px;
             border: 2px solid #007bff;
@@ -106,15 +114,10 @@
             cursor: pointer;
             font-weight: bold;
             transition: background-color 0.3s, transform 0.1s;
-            margin: 0 10px;
-            padding: 0 25px;
+            padding: 0 20px;
+            flex-grow: 1; /* Faz os botões dividirem o espaço */
         }
         
-        #startButton {
-            width: 80%;
-            height: 55px;
-        }
-
         button:hover, button:active {
             background: #007bff;
         }
@@ -138,11 +141,10 @@
     <div id="label-container"></div>
 
     <div class="footer-controls">
-        <div class="zoom-buttons">
-            <button id="zoomOutButton" onclick="zoomOut()" disabled>-</button>
-            <button id="zoomInButton" onclick="zoomIn()" disabled>+</button>
+        <div class="action-buttons">
+            <button id="toggleAreaButton" onclick="toggleCameraArea()" disabled>Ajustar Foco</button>
+            <button id="startButton" onclick="init()">Ligar Câmera</button>
         </div>
-        <button id="startButton" onclick="init()">Ligar Câmera</button>
     </div>
 
     <script type="text/javascript">
@@ -166,7 +168,6 @@
         };
 
         let model, webcam, maxPredictions;
-        let currentZoom = 1;
         let isRedirecting = false;
         let isPredictionActive = false;
 
@@ -174,14 +175,14 @@
         const startButton = document.getElementById("startButton");
         const webcamContainer = document.getElementById("webcam-container");
         const alertaDiv = document.getElementById("alerta");
-        const zoomInButton = document.getElementById('zoomInButton');
-        const zoomOutButton = document.getElementById('zoomOutButton');
-        const REDIRECT_THRESHOLD = 0.992; // 99.2% de precisão para redirecionar
+        const toggleAreaButton = document.getElementById('toggleAreaButton');
+        const REDIRECT_THRESHOLD = 0.992;
         
         async function init() {
             if (isRedirecting) return;
             isPredictionActive = false;
             startButton.disabled = true;
+            toggleAreaButton.disabled = true;
             startButton.innerText = "A carregar modelo...";
             alertaDiv.innerText = "Iniciando sistema...";
 
@@ -221,8 +222,7 @@
             
             startButton.innerText = "Reiniciar Análise";
             startButton.disabled = false;
-            zoomInButton.disabled = false;
-            zoomOutButton.disabled = false;
+            toggleAreaButton.disabled = false;
             alertaDiv.innerText = "Aguarde...";
 
             setTimeout(() => {
@@ -244,7 +244,6 @@
 
             const prediction = await model.predict(webcam.canvas);
             
-            // Primeiro, encontra a predição com a maior probabilidade
             let highestPrediction = { className: "", probability: 0 };
             for (const p of prediction) {
                 if (p.probability > highestPrediction.probability) {
@@ -252,16 +251,12 @@
                 }
             }
 
-            // Atualiza o painel de debug com a predição mais alta
             if (labelContainer) {
                  labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
             }
 
-            // Converte o nome da classe para maiúsculas para uma verificação robusta
             const classNameUpperCase = highestPrediction.className.toUpperCase();
 
-            // LÓGICA DE REDIRECIONAMENTO CORRIGIDA
-            // Verifica se a predição mais alta atende aos critérios
             if (partUrls[classNameUpperCase] && highestPrediction.probability >= REDIRECT_THRESHOLD) {
                 isRedirecting = true;
                 if (webcam) webcam.stop();
@@ -277,18 +272,9 @@
             }
         }
 
-        function zoomIn() {
-            if (currentZoom < 3 && webcam && webcam.canvas) {
-                currentZoom += 0.2;
-                webcam.canvas.style.transform = `scale(${currentZoom})`;
-            }
-        }
-
-        function zoomOut() {
-            if (currentZoom > 1 && webcam && webcam.canvas) {
-                currentZoom -= 0.2;
-                webcam.canvas.style.transform = `scale(${currentZoom})`;
-            }
+        // Nova função para alternar o tamanho da área da câmera
+        function toggleCameraArea() {
+            webcamContainer.classList.toggle('small-area');
         }
 
         window.addEventListener('beforeunload', () => {
