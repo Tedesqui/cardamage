@@ -1,217 +1,290 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Identificador de Carros com IA</title>
+    <title>Scanner de Peças Danificadas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
+        :root {
+            --camera-height: 60vh;
+            --alert-height: 10vh;
+            --footer-height: 15vh; /* Aumentado para comportar os botões de zoom */
+        }
+
         body, html {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: black;
-            color: white;
-            overflow: hidden;
-        }
-
-        video, canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            z-index: 0;
-        }
-
-        canvas {
-            display: none;
-        }
-
-        #ui-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
+            height: 100%;
             width: 100%;
-            z-index: 2;
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Alinhado ao topo */
+            padding-top: 2vh;
         }
 
-        #controls {
+        #webcam-container {
+            width: 95vw;
+            height: var(--camera-height);
             display: flex;
-            gap: 15px;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0));
+            background: #000;
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden; /* Garante que o zoom não saia do container */
+        }
+
+        #webcam-container canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            border: 4px solid #007bff;
+            border-radius: 16px;
+            box-sizing: border-box;
+            transition: transform 0.3s ease, border-color 0.5s ease;
+            transform-origin: center;
+        }
+
+        #alerta {
+            height: var(--alert-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(20px, 5vw, 28px);
+            font-weight: bold;
+            color: #ffc107;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        #label-container {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 80%;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        }
+
+        .footer-controls {
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #1a1a1a;
+        }
+
+        .zoom-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+            width: 60%;
         }
 
         button {
-            padding: 12px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
+            height: 50px;
+            font-size: clamp(16px, 4vw, 20px);
+            border-radius: 12px;
+            border: 2px solid #007bff;
+            background: #007bff20;
+            color: #fff;
             cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+            margin: 0 10px;
+            padding: 0 25px;
+        }
+        
+        #startButton {
+            width: 80%;
+            height: 55px;
         }
 
-            button:hover:not(:disabled) {
-                background-color: #0056b3;
-                transform: translateY(-2px);
-            }
-
-            button:disabled {
-                background: #555;
-                cursor: not-allowed;
-                opacity: 0.7;
-            }
-
-        #output-panel {
-            background: rgba(0,0,0,0.9);
-            padding: 15px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-sizing: border-box;
-            border-top: 1px solid #444;
+        button:hover, button:active {
+            background: #007bff;
+        }
+        
+        button:active {
+            transform: scale(0.97);
         }
 
-        pre#car-info {
-            background-color: #2a2a2a;
-            padding: 1rem;
-            border-radius: 6px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.6;
-            font-size: 0.9em;
+        button:disabled {
+            background: #55555550;
+            border-color: #555;
+            color: #999;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="canvas"></canvas>
-    <div id="ui-container">
-        <div id="controls">
-            <button id="zoomBtn">🔍 Zoom: 1x</button>
-            <button id="captureBtn">📷 Identificar Carro</button>
+
+    <div id="webcam-container"></div>
+    <div id="alerta">Aponte a câmera para a peça danificada</div>
+    <div id="label-container"></div>
+
+    <div class="footer-controls">
+        <div class="zoom-buttons">
+            <button id="zoomOutButton" onclick="zoomOut()" disabled>-</button>
+            <button id="zoomInButton" onclick="zoomIn()" disabled>+</button>
         </div>
-        <div id="output-panel">
-            <div id="status-text">🚗 Aponte a câmera para um carro e capture a imagem.</div>
-        </div>
+        <button id="startButton" onclick="init()">Ligar Câmera</button>
     </div>
-    <script>
-        const video = document.getElementById("video");
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
-        const outputPanel = document.getElementById("output-panel");
-        const controlsDiv = document.getElementById("controls");
-        const zoomBtn = document.getElementById("zoomBtn");
-        const captureBtn = document.getElementById("captureBtn");
-        let mediaTrack, currentZoom = 1;
-        const zoomLevels = [1, 1.5, 2, 3];
 
-        async function startCamera() {
+    <script type="text/javascript">
+        // =========================================================================
+        // PASSO 1: ATUALIZE O LINK DO SEU MODELO AQUI
+        // Copie o link compartilhável do seu modelo do Teachable Machine
+        // =========================================================================
+        const URL = "COLE_O_LINK_DO_SEU_MODELO_AQUI"; // Ex: "https://teachablemachine.withgoogle.com/models/seu-modelo/"
+
+        // =========================================================================
+        // PASSO 2: MAPEIE OS NOMES DAS CLASSES PARA OS LINKS DE COMPRA
+        // O "Nome da Classe" deve ser EXATAMENTE igual ao nome que você deu no Teachable Machine.
+        // =========================================================================
+        const partUrls = {
+            "Porta Amassada": "https://www.mercadolivre.com.br/c/portas-de-carros",
+            "Lanterna Quebrada": "https://www.mercadolivre.com.br/c/lanternas-traseiras",
+            "Parachoque Danificado": "https://www.mercadolivre.com.br/c/parachoques-dianteiros",
+            "Retrovisor Quebrado": "https://www.mercadolivre.com.br/c/espelhos-retrovisores-exteriores"
+            // Adicione mais peças e links aqui conforme o seu modelo
+        };
+
+        let model, webcam, maxPredictions;
+        let currentZoom = 1;
+        let isRedirecting = false;
+
+        const labelContainer = document.getElementById("label-container");
+        const startButton = document.getElementById("startButton");
+        const webcamContainer = document.getElementById("webcam-container");
+        const alertaDiv = document.getElementById("alerta");
+        const zoomInButton = document.getElementById('zoomInButton');
+        const zoomOutButton = document.getElementById('zoomOutButton');
+        const REDIRECT_THRESHOLD = 0.95; // 95% de precisão para redirecionar
+
+        async function init() {
+            if (isRedirecting) return;
+            startButton.disabled = true;
+            startButton.innerText = "A carregar modelo...";
+            alertaDiv.innerText = "Iniciando sistema...";
+
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
             try {
-                const constraints = { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                mediaTrack = stream.getVideoTracks()[0];
-                const capabilities = mediaTrack.getCapabilities();
-                if (!capabilities.zoom || capabilities.zoom.max <= 1) {
-                    zoomBtn.style.display = 'none';
-                }
-            } catch (err) {
-                console.error("Erro ao iniciar a câmera:", err);
-                outputPanel.innerHTML = `<div id="status-text">❌ Erro ao acessar a câmera. Verifique as permissões.</div>`;
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+            } catch (e) {
+                console.error("Erro ao carregar o modelo:", e);
+                alertaDiv.innerText = "Erro: Verifique o link do modelo.";
+                startButton.innerText = "Tentar Novamente";
+                startButton.disabled = false;
+                alert("Não foi possível carregar o modelo de IA. Verifique se o link no código está correto e tente novamente.");
+                return;
+            }
+            
+            const flip = false; 
+            webcam = new tmImage.Webcam(400, 400, flip); // Resolução quadrada para melhor adaptação
+            
+            try {
+                await webcam.setup({ facingMode: "environment" }); // Usa a câmera traseira
+                await webcam.play();
+                window.requestAnimationFrame(loop);
+            } catch (e) {
+                console.error("Erro ao iniciar a câmara:", e);
+                alertaDiv.innerText = "Erro ao acessar a câmera.";
+                startButton.innerText = "Ligar Câmera";
+                startButton.disabled = false;
+                alert("Não foi possível aceder à câmara. Verifique as permissões do navegador e tente novamente.");
+                return;
+            }
+            
+            webcamContainer.innerHTML = '';
+            webcamContainer.appendChild(webcam.canvas);
+            
+            startButton.innerText = "Reiniciar Análise";
+            startButton.disabled = false;
+            zoomInButton.disabled = false;
+            zoomOutButton.disabled = false;
+            alertaDiv.innerText = "Aponte para a peça 🔎";
+        }
+
+        async function loop() {
+            if (webcam && webcam.canvas && !isRedirecting) {
+                webcam.update();
+                await predict();
+                window.requestAnimationFrame(loop);
             }
         }
 
-        function toggleZoom() {
-            if (!mediaTrack) return;
-            const capabilities = mediaTrack.getCapabilities();
-            if (!capabilities.zoom) return;
-            const currentIndex = zoomLevels.indexOf(currentZoom);
-            currentZoom = zoomLevels[(currentIndex + 1) % zoomLevels.length];
-            if (currentZoom > capabilities.zoom.max) currentZoom = zoomLevels[0];
-            mediaTrack.applyConstraints({ advanced: [{ zoom: currentZoom }] });
-            zoomBtn.innerText = `🔍 Zoom: ${currentZoom}x`;
-        }
+        async function predict() {
+            if (!model || !webcam || !webcam.canvas || isRedirecting) return;
 
-        function resetUI() {
-            canvas.style.display = 'none';
-            video.style.display = 'block';
-            outputPanel.innerHTML = `<div id="status-text">🚗 Aponte a câmera para um carro e capture a imagem.</div>`;
-            controlsDiv.style.display = 'flex';
-            captureBtn.disabled = false;
-        }
+            const prediction = await model.predict(webcam.canvas);
 
-        function addRetryButton(action) {
-            const existing = outputPanel.querySelector('.retry-button-bottom');
-            if (existing) return;
-            const btn = document.createElement('button');
-            btn.innerText = 'Identificar Outro Carro';
-            btn.className = 'retry-button-bottom';
-            btn.style.marginTop = '15px';
-            btn.addEventListener('click', action);
-            outputPanel.appendChild(btn);
-        }
+            let highestPrediction = { className: "", probability: 0 };
 
-        // Função principal que captura e envia para a IA
-        async function captureAndIdentify() {
-            captureBtn.disabled = true;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            video.style.display = 'none';
-            canvas.style.display = 'block';
-            controlsDiv.style.display = 'none';
-            outputPanel.innerHTML = `<div id="status-text">🧠 Analisando a imagem do carro...</div>`;
-
-            try {
-                const imageDataUrl = canvas.toDataURL('image/jpeg');
-
-                // O prompt que instrui a IA sobre o que fazer com a imagem.
-                const prompt = `
-                        Identifique o modelo, a marca e o ano aproximado do carro nesta imagem.
-                        Forneça também algumas características principais sobre ele, como tipo de motor, potência e um fato interessante ou uma curiosidade.
-                        Se a imagem não contiver um carro, apenas informe isso de forma amigável.
-                        Responda em português do Brasil, formatado de maneira clara.
-                    `;
-
-                // A chamada para a API do seu backend
-                const response = await fetch("/api/identify-car", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        image: imageDataUrl,
-                        prompt: prompt
-                    })
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error || `Erro na API: ${response.status}`);
+            for (const p of prediction) {
+                if (p.probability > highestPrediction.probability) {
+                    highestPrediction = p;
                 }
 
-                const data = await response.json();
-                outputPanel.innerHTML = `<h2>✅ Análise do Veículo</h2><pre id="car-info">${data.resultado}</pre>`;
+                // LÓGICA DE REDIRECIONAMENTO
+                if (partUrls[p.className] && p.probability > REDIRECT_THRESHOLD) {
+                    isRedirecting = true; // Impede loops e execuções múltiplas
+                    if (webcam) webcam.stop();
 
-            } catch (err) {
-                console.error("Erro na requisição:", err);
-                outputPanel.innerHTML = `<div id="status-text">❌ Erro ao analisar a imagem: ${err.message}</div>`;
-            } finally {
-                addRetryButton(resetUI);
+                    const url = partUrls[p.className];
+                    alertaDiv.innerHTML = `✅ Peça identificada: <strong>${p.className}</strong><br>A redirecionar para a loja...`;
+                    
+                    // Altera a cor da borda para indicar sucesso
+                    if (webcam.canvas) webcam.canvas.style.borderColor = "#28a745";
+
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 2500); // Espera 2.5 segundos antes de redirecionar
+                    return; 
+                }
+            }
+
+            // Atualiza o painel de debug com a predição mais alta
+            if (labelContainer) {
+                 labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
             }
         }
 
-        zoomBtn.addEventListener('click', toggleZoom);
-        captureBtn.addEventListener('click', captureAndIdentify);
-        startCamera();
+        function zoomIn() {
+            if (currentZoom < 3 && webcam && webcam.canvas) {
+                currentZoom += 0.2;
+                webcam.canvas.style.transform = `scale(${currentZoom})`;
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > 1 && webcam && webcam.canvas) {
+                currentZoom -= 0.2;
+                webcam.canvas.style.transform = `scale(${currentZoom})`;
+            }
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (webcam) webcam.stop();
+        });
     </script>
+
 </body>
 </html>
