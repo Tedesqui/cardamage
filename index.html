@@ -181,8 +181,14 @@
         const REDIRECT_THRESHOLD = 0.992;
         
         async function init() {
-            if (isRedirecting) return;
+            // CORREÇÃO: Para a câmera existente antes de iniciar uma nova
+            if (webcam) {
+                webcam.stop();
+            }
+            // Reseta o estado para permitir um reinício limpo
+            isRedirecting = false;
             isPredictionActive = false;
+
             startButton.disabled = true;
             startButton.innerText = "A carregar modelo...";
             alertaDiv.innerText = "Iniciando sistema...";
@@ -221,7 +227,7 @@
             webcamContainer.innerHTML = '';
             webcamContainer.appendChild(webcam.canvas);
             
-            startButton.innerText = "Reiniciar Câmera"; // <-- TEXTO ALTERADO
+            startButton.innerText = "Reiniciar Câmera";
             startButton.disabled = false;
             zoomInButton.disabled = false;
             zoomOutButton.disabled = false;
