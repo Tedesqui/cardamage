@@ -181,7 +181,7 @@
         const REDIRECT_THRESHOLD = 0.992;
         
         async function init() {
-            // CORREÇÃO: Para a câmera existente antes de iniciar uma nova
+            // Para a câmera existente antes de iniciar uma nova
             if (webcam) {
                 webcam.stop();
             }
@@ -294,8 +294,14 @@
             }
         }
 
-        window.addEventListener('beforeunload', () => {
-            if (webcam) webcam.stop();
+        // CORREÇÃO: Lida com o retorno do usuário para a página após o redirecionamento
+        window.addEventListener('pageshow', (event) => {
+            // O evento 'pageshow' é acionado quando a página é exibida, incluindo quando o usuário volta pelo histórico.
+            // A propriedade 'persisted' é verdadeira se a página foi restaurada do cache (back-forward cache).
+            if (event.persisted) {
+                // Se a página foi restaurada do cache, recarregá-la garante um estado limpo e funcional.
+                window.location.reload();
+            }
         });
     </script>
 
