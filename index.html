@@ -197,8 +197,11 @@
             const metadataURL = URL + "metadata.json";
 
             try {
-                model = await tmImage.load(modelURL, metadataURL);
-                maxPredictions = model.getTotalClasses();
+                // Carrega o modelo apenas se não estiver já carregado
+                if (!model) {
+                    model = await tmImage.load(modelURL, metadataURL);
+                    maxPredictions = model.getTotalClasses();
+                }
             } catch (e) {
                 console.error("Erro ao carregar o modelo:", e);
                 alertaDiv.innerText = "Erro: Verifique o link do modelo.";
@@ -296,10 +299,10 @@
 
         // CORREÇÃO: Lida com o retorno do usuário para a página após o redirecionamento
         window.addEventListener('pageshow', (event) => {
-            // O evento 'pageshow' é acionado quando a página é exibida, incluindo quando o usuário volta pelo histórico.
-            // A propriedade 'persisted' é verdadeira se a página foi restaurada do cache (back-forward cache).
+            // A propriedade 'persisted' é verdadeira se a página foi restaurada do cache (bfcache).
             if (event.persisted) {
                 // Se a página foi restaurada do cache, recarregá-la garante um estado limpo e funcional.
+                // Esta é a forma mais robusta de garantir que o script seja reiniciado corretamente.
                 window.location.reload();
             }
         });
