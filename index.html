@@ -243,34 +243,37 @@
             if (!model || !webcam || !webcam.canvas || isRedirecting || !isPredictionActive) return;
 
             const prediction = await model.predict(webcam.canvas);
+            
+            // Primeiro, encontra a predição com a maior probabilidade
             let highestPrediction = { className: "", probability: 0 };
-
             for (const p of prediction) {
                 if (p.probability > highestPrediction.probability) {
                     highestPrediction = p;
                 }
-
-                // LÓGICA DE REDIRECIONAMENTO ALTERADA
-                // Apenas redireciona se a probabilidade for maior ou igual ao limiar
-                if (partUrls[p.className] && p.probability >= REDIRECT_THRESHOLD) {
-                    isRedirecting = true;
-                    if (webcam) webcam.stop();
-
-                    const url = partUrls[p.className];
-                    // MENSAGEM DE ALERTA ALTERADA
-                    alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${p.className}</strong>`;
-                    
-                    if (webcam.canvas) webcam.canvas.style.borderColor = "#28a745";
-
-                    setTimeout(() => {
-                        window.location.href = url;
-                    }, 2500);
-                    return; 
-                }
             }
 
+            // Atualiza o painel de debug com a predição mais alta
             if (labelContainer) {
                  labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
+            }
+
+            // Converte o nome da classe para maiúsculas para uma verificação robusta
+            const classNameUpperCase = highestPrediction.className.toUpperCase();
+
+            // LÓGICA DE REDIRECIONAMENTO CORRIGIDA
+            // Verifica se a predição mais alta atende aos critérios
+            if (partUrls[classNameUpperCase] && highestPrediction.probability >= REDIRECT_THRESHOLD) {
+                isRedirecting = true;
+                if (webcam) webcam.stop();
+
+                const url = partUrls[classNameUpperCase];
+                alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${highestPrediction.className}</strong>`;
+                
+                if (webcam.canvas) webcam.canvas.style.borderColor = "#28a745";
+
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 2500);
             }
         }
 
