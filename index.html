@@ -8,9 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
         :root {
-            /* ALTERAÇÃO: Adicionadas duas alturas para a câmera */
             --camera-height-default: 58.5vh;
-            --camera-height-narrow: 30vh; 
+            /* ALTERAÇÃO: Altura da visão de foco reduzida em 30% (de 30vh para 21vh) */
+            --camera-height-narrow: 21vh; 
         }
 
         body, html {
@@ -29,14 +29,12 @@
             padding-top: 2vh;
         }
 
-        /* ALTERAÇÃO: Classe para alternar a altura da câmera */
         body.narrow-view #webcam-container {
             height: var(--camera-height-narrow);
         }
 
         #webcam-container {
             width: 95vw;
-            /* ALTERAÇÃO: Usa a altura padrão inicialmente */
             height: var(--camera-height-default);
             display: flex;
             justify-content: center;
@@ -45,7 +43,6 @@
             position: relative;
             border-radius: 18px;
             overflow: hidden;
-            /* A transição suave na altura já estava aqui, o que é ótimo */
             transition: height 0.4s ease, width 0.4s ease;
         }
 
@@ -97,7 +94,6 @@
             background: #1a1a1a;
         }
         
-        /* ALTERAÇÃO: Div para o novo botão de foco */
         .focus-control {
             display: flex;
             justify-content: center;
@@ -170,11 +166,10 @@
             "PARA-CHOQUE": "https://produto.mercadolivre.com.br/MLB-3965167941-para-choque-traseiro-honda-civic-2012-a-2016-_JM",
             "PARA-LAMA": "https://lista.mercadolivre.com.br/para-lama-de-carro",
             "RETROVISOR": "https://www.mercadolivre.com.br/capa-retrovisor-s-pisca-civic-2012-13-2014-2015-2016-esquer/up/MLBU1725512348",
-            "FAROL": "https://produto.mercadolivre.com.br/MLB-3501984947-par-farol-honda-civic-2012-2013-2014-2015-2016-dianteiro-_JM?searchVariation=179156832014#"
+            "FAROL": "https://lista.mercadolivre.com.br/farol-de-carro"
         };
 
         let model, webcam, maxPredictions;
-        // ALTERAÇÃO: Variáveis de zoom removidas
         let isRedirecting = false;
         let isPredictionActive = false;
 
@@ -182,7 +177,6 @@
         const startButton = document.getElementById("startButton");
         const webcamContainer = document.getElementById("webcam-container");
         const alertaDiv = document.getElementById("alerta");
-        // ALTERAÇÃO: Referência para o novo botão
         const toggleViewButton = document.getElementById('toggleViewButton');
         const REDIRECT_THRESHOLD = 0.992;
         
@@ -237,7 +231,6 @@
             
             startButton.innerText = "Reiniciar Câmera";
             startButton.disabled = false;
-            // ALTERAÇÃO: Habilita o novo botão de foco
             toggleViewButton.disabled = false;
             alertaDiv.innerText = "Aguarde...";
 
@@ -288,14 +281,9 @@
             }
         }
 
-        // ALTERAÇÃO: Funções de zoom removidas
-        
-        // ALTERAÇÃO: Nova função para alternar a visão da câmera
         function toggleView() {
-            // Adiciona ou remove a classe 'narrow-view' do body
             document.body.classList.toggle('narrow-view');
             
-            // Verifica se a classe está presente para atualizar o texto do botão
             const isNarrow = document.body.classList.contains('narrow-view');
             toggleViewButton.innerHTML = isNarrow ? 'Visão Ampla ↔️' : 'Ajustar Foco ↕️';
         }
