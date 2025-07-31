@@ -9,8 +9,8 @@
     <style>
         :root {
             --camera-height-default: 58.5vh;
-            /* ALTERAÇÃO: Altura da visão de foco reduzida em 30% (de 30vh para 21vh) */
-            --camera-height-narrow: 21vh; 
+            /* ALTERAÇÃO: Altura da visão de foco aumentada em 20% (de 21vh para 25.2vh) */
+            --camera-height-narrow: 25.2vh; 
         }
 
         body, html {
@@ -168,6 +168,17 @@
             "RETROVISOR": "https://www.mercadolivre.com.br/capa-retrovisor-s-pisca-civic-2012-13-2014-2015-2016-esquer/up/MLBU1725512348",
             "FAROL": "https://lista.mercadolivre.com.br/farol-de-carro"
         };
+        
+        // ALTERAÇÃO: Limites de probabilidade customizados por peça
+        const customThresholds = {
+            "RETROVISOR": 0.85,    // 85%
+            "FAROL": 0.82,         // 82%
+            "PARA-CHOQUE": 0.997,  // 99.7%
+            "PORTA": 0.995,        // 99.5%
+            "PNEU": 0.85           // 85%
+        };
+        // Limite padrão para outras peças não listadas acima
+        const defaultThreshold = 0.992; 
 
         let model, webcam, maxPredictions;
         let isRedirecting = false;
@@ -178,7 +189,6 @@
         const webcamContainer = document.getElementById("webcam-container");
         const alertaDiv = document.getElementById("alerta");
         const toggleViewButton = document.getElementById('toggleViewButton');
-        const REDIRECT_THRESHOLD = 0.992;
         
         async function init() {
             if (webcam) {
@@ -265,8 +275,13 @@
             }
 
             const classNameUpperCase = highestPrediction.className.toUpperCase();
+            
+            // ALTERAÇÃO: Determina o limite de probabilidade a ser usado
+            // Se a peça tem um limite customizado, usa esse valor. Senão, usa o padrão.
+            const threshold = customThresholds[classNameUpperCase] || defaultThreshold;
 
-            if (partUrls[classNameUpperCase] && highestPrediction.probability >= REDIRECT_THRESHOLD) {
+            // ALTERAÇÃO: Usa o 'threshold' dinâmico na verificação
+            if (partUrls[classNameUpperCase] && highestPrediction.probability >= threshold) {
                 isRedirecting = true;
                 if (webcam) webcam.stop();
 
