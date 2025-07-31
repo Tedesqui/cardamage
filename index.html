@@ -8,9 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
         :root {
-            --camera-height: 58.5vh; /* Diminuído em 10% */
-            --alert-height: 10vh;
-            --footer-height: 15vh;
+            /* ALTERAÇÃO: Adicionadas duas alturas para a câmera */
+            --camera-height-default: 58.5vh;
+            --camera-height-narrow: 30vh; 
         }
 
         body, html {
@@ -29,9 +29,15 @@
             padding-top: 2vh;
         }
 
+        /* ALTERAÇÃO: Classe para alternar a altura da câmera */
+        body.narrow-view #webcam-container {
+            height: var(--camera-height-narrow);
+        }
+
         #webcam-container {
             width: 95vw;
-            height: var(--camera-height);
+            /* ALTERAÇÃO: Usa a altura padrão inicialmente */
+            height: var(--camera-height-default);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -39,23 +45,23 @@
             position: relative;
             border-radius: 18px;
             overflow: hidden;
+            /* A transição suave na altura já estava aqui, o que é ótimo */
             transition: height 0.4s ease, width 0.4s ease;
         }
 
-        /* CORREÇÃO APLICADA AQUI */
         #webcam-container canvas {
-            width: 100%;  /* Força a largura a preencher o contêiner */
-            height: 100%; /* Força a altura a preencher o contêiner */
-            object-fit: cover; /* Garante que o vídeo não fique distorcido */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             border: 4px solid #007bff;
             border-radius: 16px;
             box-sizing: border-box;
-            transition: transform 0.3s ease, border-color 0.5s ease;
+            transition: border-color 0.5s ease;
             transform-origin: center;
         }
 
         #alerta {
-            height: var(--alert-height);
+            height: 10vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -90,8 +96,9 @@
             box-sizing: border-box;
             background: #1a1a1a;
         }
-
-        .zoom-buttons {
+        
+        /* ALTERAÇÃO: Div para o novo botão de foco */
+        .focus-control {
             display: flex;
             justify-content: center;
             margin-bottom: 15px;
@@ -140,9 +147,8 @@
     <div id="label-container"></div>
 
     <div class="footer-controls">
-        <div class="zoom-buttons">
-            <button id="zoomOutButton" onclick="zoomOut()" disabled>-</button>
-            <button id="zoomInButton" onclick="zoomIn()" disabled>+</button>
+        <div class="focus-control">
+            <button id="toggleViewButton" onclick="toggleView()" disabled>Ajustar Foco ↕️</button>
         </div>
         <button id="startButton" onclick="init()">Ligar Câmera</button>
     </div>
@@ -164,12 +170,11 @@
             "PARA-CHOQUE": "https://produto.mercadolivre.com.br/MLB-3965167941-para-choque-traseiro-honda-civic-2012-a-2016-_JM",
             "PARA-LAMA": "https://lista.mercadolivre.com.br/para-lama-de-carro",
             "RETROVISOR": "https://www.mercadolivre.com.br/capa-retrovisor-s-pisca-civic-2012-13-2014-2015-2016-esquer/up/MLBU1725512348",
-            "FAROL": "https://lista.mercadolivre.com.br/farol-de-carro"
+            "FAROL": "https://produto.mercadolivre.com.br/MLB-3501984947-par-farol-honda-civic-2012-2013-2014-2015-2016-dianteiro-_JM?searchVariation=179156832014#"
         };
 
         let model, webcam, maxPredictions;
-        let currentZoom = 1;
-        const MAX_ZOOM = 3; // Limite máximo de zoom
+        // ALTERAÇÃO: Variáveis de zoom removidas
         let isRedirecting = false;
         let isPredictionActive = false;
 
@@ -177,12 +182,11 @@
         const startButton = document.getElementById("startButton");
         const webcamContainer = document.getElementById("webcam-container");
         const alertaDiv = document.getElementById("alerta");
-        const zoomInButton = document.getElementById('zoomInButton');
-        const zoomOutButton = document.getElementById('zoomOutButton');
+        // ALTERAÇÃO: Referência para o novo botão
+        const toggleViewButton = document.getElementById('toggleViewButton');
         const REDIRECT_THRESHOLD = 0.992;
         
         async function init() {
-            // Se a webcam já foi iniciada, o botão agora recarrega a página.
             if (webcam) {
                 window.location.reload();
                 return;
@@ -199,7 +203,6 @@
             const metadataURL = URL + "metadata.json";
 
             try {
-                // Carrega o modelo apenas se não estiver já carregado
                 if (!model) {
                     model = await tmImage.load(modelURL, metadataURL);
                     maxPredictions = model.getTotalClasses();
@@ -234,8 +237,8 @@
             
             startButton.innerText = "Reiniciar Câmera";
             startButton.disabled = false;
-            zoomInButton.disabled = false;
-            zoomOutButton.disabled = false;
+            // ALTERAÇÃO: Habilita o novo botão de foco
+            toggleViewButton.disabled = false;
             alertaDiv.innerText = "Aguarde...";
 
             setTimeout(() => {
@@ -285,18 +288,16 @@
             }
         }
 
-        function zoomIn() {
-            if (currentZoom < MAX_ZOOM && webcam && webcam.canvas) {
-                currentZoom += 0.2;
-                webcam.canvas.style.transform = `scale(${currentZoom})`;
-            }
-        }
-
-        function zoomOut() {
-            if (currentZoom > 1 && webcam && webcam.canvas) {
-                currentZoom -= 0.2;
-                webcam.canvas.style.transform = `scale(${currentZoom})`;
-            }
+        // ALTERAÇÃO: Funções de zoom removidas
+        
+        // ALTERAÇÃO: Nova função para alternar a visão da câmera
+        function toggleView() {
+            // Adiciona ou remove a classe 'narrow-view' do body
+            document.body.classList.toggle('narrow-view');
+            
+            // Verifica se a classe está presente para atualizar o texto do botão
+            const isNarrow = document.body.classList.contains('narrow-view');
+            toggleViewButton.innerHTML = isNarrow ? 'Visão Ampla ↔️' : 'Ajustar Foco ↕️';
         }
 
         window.addEventListener('pageshow', (event) => {
