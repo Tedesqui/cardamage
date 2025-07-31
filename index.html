@@ -161,7 +161,7 @@
         const partUrls = {
             "PORTA": "https://lista.mercadolivre.com.br/portas-de-carro",
             "PNEU": "https://produto.mercadolivre.com.br/MLB-5249535452-roda-aro-16-honda-civic-2012-2013-2014-5x114-pneu-_JM",
-            "LANTERNA TRASEIRA": "https://lista.mercadolivre.com.br/lanterna-traseira-carro",
+            "LANTERNA TRASEIRA": "https://produto.mercadolivre.com.br/MLB-5447314524-sinaleira-traseira-civic-2012-2013-2014-super-promoco-_JM",
             "VIDRO DANIFICADO": "https://lista.mercadolivre.com.br/parabrisa-e-janelas-de-carro",
             "PARA-CHOQUE": "https://produto.mercadolivre.com.br/MLB-3965167941-para-choque-traseiro-honda-civic-2012-a-2016-_JM",
             "PARA-LAMA": "https://lista.mercadolivre.com.br/para-lama-de-carro",
@@ -171,12 +171,13 @@
         
         // ALTERAÇÃO: Limites de probabilidade customizados por peça
         const customThresholds = {
-            "RETROVISOR": 0.85,    // 85%
-            "FAROL": 0.82,         // 82%
-            "PARA-CHOQUE": 0.997,  // 99.7%
-            "PORTA": 0.995,        // 99.5%
-            "PNEU": 0.85           // 85%
-        };
+            "RETROVISOR": 0.80,    // 80%
+            "FAROL": 0.80,         // 80%
+            "PARA-CHOQUE": 0.97,  // 97%
+            "PORTA": 0.97,        // 97%
+            "PNEU": 0.85,        // 85%
+            "LANTERNA TRASEIRA": 0.80    // 80%
+            };
         // Limite padrão para outras peças não listadas acima
         const defaultThreshold = 0.992; 
 
