@@ -56,7 +56,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(18px, 4vw, 24px); /* Ajustado para caber mais texto */
+            font-size: clamp(18px, 4vw, 24px);
             font-weight: bold;
             color: #ffc107;
             text-align: center;
@@ -136,16 +136,8 @@
     </div>
 
     <script type="text/javascript">
-        // =========================================================================
-        // PASSO 1: LINK DO MODELO (MANTIDO)
-        // =========================================================================
         const URL = "https://teachablemachine.withgoogle.com/models/gah_QgM4j/";
 
-        // =========================================================================
-        // Objeto 'partUrls' removido pois não é mais necessário.
-        // =========================================================================
-        
-        // Limites de probabilidade customizados por peça (MANTIDO)
         const customThresholds = {
             "RETROVISOR": 0.80,
             "FAROL": 0.80,
@@ -154,12 +146,15 @@
             "PNEU": 0.85,
             "LANTERNA TRASEIRA": 0.80
         };
-        // Limite padrão para outras peças
         const defaultThreshold = 0.992; 
 
         let model, webcam, maxPredictions;
-        let isRedirecting = false;
+        let isLooping = false;
         let isPredictionActive = false;
+
+        // Variáveis globais para guardar a imagem e o nome da peça para o compartilhamento
+        let capturedBlob = null;
+        let identifiedPartName = "";
 
         const labelContainer = document.getElementById("label-container");
         const startButton = document.getElementById("startButton");
@@ -168,12 +163,13 @@
         const toggleViewButton = document.getElementById('toggleViewButton');
         
         async function init() {
+            // Reinicia a página se a câmera já estiver ligada, para simplificar o estado
             if (webcam) {
                 window.location.reload();
                 return;
             }
             
-            isRedirecting = false;
+            isLooping = true;
             isPredictionActive = false;
 
             startButton.disabled = true;
@@ -183,35 +179,15 @@
             const modelURL = URL + "model.json";
             const metadataURL = URL + "metadata.json";
 
-            try {
-                if (!model) {
-                    model = await tmImage.load(modelURL, metadataURL);
-                    maxPredictions = model.getTotalClasses();
-                }
-            } catch (e) {
-                console.error("Erro ao carregar o modelo:", e);
-                alertaDiv.innerText = "Erro: Verifique o link do modelo.";
-                startButton.innerText = "Tentar Novamente";
-                startButton.disabled = false;
-                alert("Não foi possível carregar o modelo de IA. Verifique se o link no código está correto e tente novamente.");
-                return;
-            }
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
             
             const flip = false; 
             webcam = new tmImage.Webcam(400, 400, flip);
             
-            try {
-                await webcam.setup({ facingMode: "environment" });
-                await webcam.play();
-                window.requestAnimationFrame(loop);
-            } catch (e) {
-                console.error("Erro ao iniciar a câmara:", e);
-                alertaDiv.innerText = "Erro ao acessar a câmera.";
-                startButton.innerText = "Ligar Câmera";
-                startButton.disabled = false;
-                alert("Não foi possível aceder à câmara. Verifique as permissões do navegador e tente novamente.");
-                return;
-            }
+            await webcam.setup({ facingMode: "environment" });
+            await webcam.play();
+            window.requestAnimationFrame(loop);
             
             webcamContainer.innerHTML = '';
             webcamContainer.appendChild(webcam.canvas);
@@ -228,27 +204,52 @@
         }
 
         async function loop() {
-            if (webcam && webcam.canvas && !isRedirecting) {
+            if (webcam && isLooping) {
                 webcam.update();
                 await predict();
                 window.requestAnimationFrame(loop);
             }
         }
+        
+        // NOVA FUNÇÃO para lidar com o clique no botão de compartilhar
+        async function shareWithWhatsApp() {
+            if (!capturedBlob || !identifiedPartName) {
+                alertaDiv.innerText = "Erro: Imagem ou nome da peça não encontrados.";
+                return;
+            }
 
-        // Função de fallback para abrir o WhatsApp manualmente
-        function openWhatsAppManually(message, partName) {
-            alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${partName}</strong>. <br>Seu navegador não suporta o envio automático da imagem. Redirecionando... <br>Por favor, anexe a imagem na conversa.`;
-            const encodedMessage = encodeURIComponent(message);
-            const phoneNumber = '5524998132856';
-            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-            
-            setTimeout(() => {
-                window.open(whatsappUrl, '_blank'); 
-            }, 4500); // Atraso para o usuário ler a instrução
+            startButton.disabled = true;
+            alertaDiv.innerText = "Abrindo compartilhamento...";
+
+            const message = `Olá! Gostaria de saber se você tem essa peça (${identifiedPartName}) pra vender.`;
+            const file = new File([capturedBlob], `${identifiedPartName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+            const shareData = {
+                text: message,
+                files: [file]
+            };
+
+            // A verificação é feita aqui, no momento do clique
+            if (navigator.canShare && navigator.canShare(shareData)) {
+                try {
+                    await navigator.share(shareData);
+                    alertaDiv.innerText = "✅ Consulta enviada!";
+                    startButton.innerText = "Analisar Outra Peça";
+                    startButton.onclick = () => window.location.reload();
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        alertaDiv.innerText = "Compartilhamento cancelado.";
+                    } else {
+                        alertaDiv.innerText = `Erro: ${err.name}`;
+                    }
+                }
+            } else {
+                alertaDiv.innerHTML = "Desculpe, seu navegador não suporta o compartilhamento de arquivos desta forma.";
+            }
+            startButton.disabled = false;
         }
 
         async function predict() {
-            if (!model || !webcam || !webcam.canvas || isRedirecting || !isPredictionActive) return;
+            if (!model || !webcam.canvas || !isPredictionActive) return;
 
             const prediction = await model.predict(webcam.canvas);
             
@@ -259,59 +260,42 @@
                 }
             }
 
-            if (labelContainer) {
-                labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
-            }
+            labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
 
             const classNameUpperCase = highestPrediction.className.toUpperCase();
             const threshold = customThresholds[classNameUpperCase] || defaultThreshold;
 
-            // Condição para acionar o envio para o WhatsApp
             if (customThresholds[classNameUpperCase] && highestPrediction.probability >= threshold) {
-                isRedirecting = true;
-                if (webcam) {
-                    webcam.stop(); // Para a câmera para "congelar" a imagem da peça
-                }
+                // Para o loop de predição
+                isLooping = false;
+                isPredictionActive = false;
+                webcam.stop();
 
                 const partName = highestPrediction.className;
-                if (webcam.canvas) webcam.canvas.style.borderColor = "#28a745"; 
+                identifiedPartName = partName; // Guarda o nome para usar na função de compartilhar
 
-                const message = `Olá! Gostaria de saber se você tem essa peça (${partName}) pra vender.`;
-
-                // Tenta usar a API de Compartilhamento Web (Web Share API)
-                webcam.canvas.toBlob(async (blob) => {
-                    const file = new File([blob], `${partName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
-                    const shareData = {
-                        text: message,
-                        files: [file]
-                    };
-
-                    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-                        alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${partName}</strong>. <br>Abrindo menu para compartilhar...`;
-                        try {
-                            await navigator.share(shareData);
-                            alertaDiv.innerHTML = `✅ Consulta enviada!`;
-                        } catch (err) {
-                            console.error('Erro ao compartilhar:', err);
-                            if (err.name === 'AbortError') {
-                                alertaDiv.innerHTML = 'Compartilhamento cancelado. Clique em "Reiniciar Câmera" para tentar novamente.';
-                                startButton.disabled = false; // Reabilita o botão de reiniciar
-                            } else {
-                                // Fallback em caso de outro erro no compartilhamento
-                                openWhatsAppManually(message, partName);
-                            }
-                        }
-                    } else {
-                        // Fallback para navegadores que não suportam a API ou o compartilhamento de arquivos
-                        openWhatsAppManually(message, partName);
-                    }
-                }, 'image/png');
+                // Pega a imagem da câmera e guarda na variável global
+                webcam.canvas.toBlob(blob => {
+                    capturedBlob = blob;
+                });
+                
+                webcam.canvas.style.borderColor = "#28a745";
+                
+                // ATUALIZA A UI PARA PREPARAR PARA O COMPARTILHAMENTO
+                alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${partName}</strong>`;
+                toggleViewButton.style.display = 'none'; // Esconde o botão de foco
+                labelContainer.style.display = 'none'; // Esconde o label de detecção
+                
+                startButton.innerText = 'Compartilhar no WhatsApp';
+                startButton.disabled = false;
+                
+                // MUDA A FUNÇÃO DO BOTÃO: agora ele vai chamar shareWithWhatsApp
+                startButton.onclick = shareWithWhatsApp;
             }
         }
 
         function toggleView() {
             document.body.classList.toggle('narrow-view');
-            
             const isNarrow = document.body.classList.contains('narrow-view');
             toggleViewButton.innerHTML = isNarrow ? 'Visão Ampla ↔️' : 'Ajustar Foco ↕️';
         }
