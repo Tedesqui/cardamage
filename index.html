@@ -12,114 +12,65 @@
             --camera-height-narrow: 25.2vh; 
         }
         body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            background-color: #1a1a1a;
-            color: #fff;
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            background-color: #1a1a1a; color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
+            overflow: hidden; display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
             padding-top: 2vh;
         }
-        body.narrow-view #webcam-container {
-            height: var(--camera-height-narrow);
-        }
+        body.narrow-view #webcam-container { height: var(--camera-height-narrow); }
         #webcam-container {
-            width: 95vw;
-            height: var(--camera-height-default);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #000;
-            position: relative;
-            border-radius: 18px;
-            overflow: hidden;
-            transition: height 0.4s ease, width 0.4s ease;
+            width: 95vw; height: var(--camera-height-default);
+            display: flex; justify-content: center; align-items: center;
+            background: #000; position: relative; border-radius: 18px;
+            overflow: hidden; transition: height 0.4s ease, width 0.4s ease;
         }
         #webcam-container canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border: 4px solid #007bff;
-            border-radius: 16px;
-            box-sizing: border-box;
-            transition: border-color 0.5s ease;
-            transform-origin: center;
+            width: 100%; height: 100%; object-fit: cover;
+            border: 4px solid #007bff; border-radius: 16px;
+            box-sizing: border-box; transition: border-color 0.5s ease;
         }
         #alerta {
-            height: 12vh; /* Aumentado para caber mais texto de instrução */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(16px, 4vw, 20px);
-            font-weight: bold;
-            color: #ffc107;
-            text-align: center;
-            padding: 0 15px;
-            line-height: 1.4;
+            height: 12vh; display: flex; align-items: center; justify-content: center;
+            font-size: clamp(16px, 4vw, 20px); font-weight: bold;
+            color: #ffc107; text-align: center;
+            padding: 0 15px; line-height: 1.4;
         }
         #label-container {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 10px 15px;
-            border-radius: 10px;
-            font-size: 14px;
-            max-width: 80%;
-            z-index: 10;
-            backdrop-filter: blur(5px);
+            position: fixed; top: 15px; left: 15px;
+            background: rgba(0, 0, 0, 0.75); padding: 10px 15px;
+            border-radius: 10px; font-size: 14px;
+            max-width: 80%; z-index: 10; backdrop-filter: blur(5px);
         }
         .footer-controls {
-            width: 100%;
-            position: fixed;
-            bottom: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-            box-sizing: border-box;
-            background: #1a1a1a;
+            width: 100%; position: fixed; bottom: 0;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 10px; box-sizing: border-box; background: #1a1a1a;
         }
-        .focus-control {
+        /* MODIFICAÇÃO: Botões lado a lado no final */
+        .button-group {
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
+            width: 95%;
             margin-bottom: 15px;
-            width: 60%;
         }
         button {
-            height: 50px;
-            font-size: clamp(16px, 4vw, 20px);
-            border-radius: 12px;
-            border: 2px solid #007bff;
-            background: #007bff20;
-            color: #fff;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s, transform 0.1s;
-            margin: 0 10px;
-            padding: 0 25px;
+            font-size: clamp(14px, 3.5vw, 18px); /* Fonte um pouco menor */
+            border-radius: 12px; border: 2px solid #007bff;
+            background: #007bff20; color: #fff; cursor: pointer;
+            font-weight: bold; transition: background-color 0.3s, transform 0.1s;
+            padding: 10px 15px;
+            height: 60px; /* Altura aumentada */
+            flex-grow: 1; /* Para ocupar espaço */
+            margin: 0 5px; /* Espaçamento entre botões */
         }
-        #startButton {
-            width: 80%;
-            height: 55px;
-        }
-        button:hover, button:active {
-            background: #007bff;
-        }
-        button:active {
-            transform: scale(0.97);
-        }
+        #initButton { width: 80%; height: 55px; } /* Botão inicial grande */
+        button:hover, button:active { background: #007bff; }
+        button:active { transform: scale(0.97); }
         button:disabled {
-            background: #55555550;
-            border-color: #555;
-            color: #999;
-            cursor: not-allowed;
+            background: #55555550; border-color: #555;
+            color: #999; cursor: not-allowed;
         }
     </style>
 </head>
@@ -130,38 +81,38 @@
     <div id="label-container"></div>
 
     <div class="footer-controls">
-        <div class="focus-control">
-            <button id="toggleViewButton" onclick="toggleView()" disabled>Ajustar Foco ↕️</button>
+        <div class="button-group" id="final-buttons" style="display: none;">
+            <button id="saveButton">✅ 1. Salvar Imagem</button>
+            <button id="whatsappButton">➡️ 2. Abrir WhatsApp</button>
         </div>
-        <button id="startButton" onclick="init()">Ligar Câmera</button>
+        <button id="initButton" onclick="init()">Ligar Câmera</button>
     </div>
 
     <script type="text/javascript">
         const URL = "https://teachablemachine.withgoogle.com/models/gah_QgM4j/";
-
         const customThresholds = {
             "RETROVISOR": 0.80, "FAROL": 0.80, "PARA-CHOQUE": 0.97,
             "PORTA": 0.97, "PNEU": 0.85, "LANTERNA TRASEIRA": 0.80
         };
         const defaultThreshold = 0.992; 
 
-        let model, webcam;
-        let isLooping = false;
-        let isPredictionActive = false;
-
+        let model, webcam, isLooping = false, isPredictionActive = false;
+        
         const labelContainer = document.getElementById("label-container");
-        const startButton = document.getElementById("startButton");
+        const initButton = document.getElementById("initButton");
         const webcamContainer = document.getElementById("webcam-container");
         const alertaDiv = document.getElementById("alerta");
-        const toggleViewButton = document.getElementById('toggleViewButton');
+        const finalButtons = document.getElementById("final-buttons");
+        const saveButton = document.getElementById("saveButton");
+        const whatsappButton = document.getElementById("whatsappButton");
         
         async function init() {
             if (webcam) { window.location.reload(); return; }
             
             isLooping = true;
             isPredictionActive = false;
-            startButton.disabled = true;
-            startButton.innerText = "A carregar modelo...";
+            initButton.disabled = true;
+            initButton.innerText = "A carregar modelo...";
             alertaDiv.innerText = "Iniciando sistema...";
 
             model = await tmImage.load(URL + "model.json", URL + "metadata.json");
@@ -174,9 +125,8 @@
             webcamContainer.innerHTML = '';
             webcamContainer.appendChild(webcam.canvas);
             
-            startButton.innerText = "Reiniciar Câmera";
-            startButton.disabled = false;
-            toggleViewButton.disabled = false;
+            initButton.innerText = "Reiniciar Câmera";
+            initButton.disabled = false;
             alertaDiv.innerText = "Aguarde...";
 
             setTimeout(() => {
@@ -193,51 +143,59 @@
             }
         }
 
+        // NOVA FUNÇÃO PARA SALVAR O CONTEÚDO DO CANVAS
+        function saveCanvasAsImage(canvasElement, filename) {
+            const link = document.createElement('a');
+            link.href = canvasElement.toDataURL('image/png');
+            link.download = filename.replace(/\s+/g, '_') + '.png';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alertaDiv.innerHTML = "<b>Imagem salva!</b><br>Agora clique em 'Abrir WhatsApp'.";
+            saveButton.disabled = true;
+            saveButton.style.borderColor = '#28a745';
+        }
+
         async function predict() {
             if (!model || !webcam.canvas || !isPredictionActive) return;
 
             const prediction = await model.predict(webcam.canvas);
-            
-            let highestPrediction = prediction.reduce((prev, current) => (prev.probability > current.probability) ? prev : current);
-
+            let highestPrediction = prediction.reduce((p, c) => (p.probability > c.probability) ? p : c);
             labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
 
             const classNameUpperCase = highestPrediction.className.toUpperCase();
             const threshold = customThresholds[classNameUpperCase] || defaultThreshold;
 
             if (customThresholds[classNameUpperCase] && highestPrediction.probability >= threshold) {
-                // Para o loop e congela a imagem
                 isLooping = false;
                 isPredictionActive = false;
                 webcam.stop();
 
                 const partName = highestPrediction.className;
-                webcam.canvas.style.borderColor = "#28a745";
+                const canvas = webcam.canvas;
+                canvas.style.borderColor = "#28a745";
                 
-                // Prepara o link direto do WhatsApp
-                const phoneNumber = '5524998132856'; // Número de destino
+                // Prepara o link do WhatsApp
+                const phoneNumber = '5524998132856';
                 const message = `Olá! Gostaria de saber se você tem essa peça (${partName}) pra vender.`;
                 const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
-                // Atualiza a interface com as instruções
-                alertaDiv.innerHTML = `✅ Peça identificada! Clique no botão para abrir o WhatsApp. <br><strong>Depois, salve esta imagem e anexe na conversa.</strong>`;
-                toggleViewButton.style.display = 'none';
+                // Esconde botão inicial e mostra os 2 botões de ação
+                initButton.style.display = 'none';
                 labelContainer.style.display = 'none';
+                finalButtons.style.display = 'flex';
+
+                alertaDiv.innerHTML = `Peça Identificada: <strong>${partName}</strong>.<br>Siga os passos abaixo:`;
                 
-                // Configura o botão principal para abrir o WhatsApp
-                startButton.innerText = 'Enviar Orçamento por WhatsApp';
-                startButton.disabled = false;
-                startButton.onclick = () => {
-                    window.open(whatsappUrl, '_blank');
-                };
+                // Configura as ações dos novos botões
+                saveButton.onclick = () => saveCanvasAsImage(canvas, partName);
+                whatsappButton.onclick = () => window.open(whatsappUrl, '_blank');
             }
         }
-
-        function toggleView() {
-            document.body.classList.toggle('narrow-view');
-            toggleViewButton.innerHTML = document.body.classList.contains('narrow-view') ? 'Visão Ampla ↔️' : 'Ajustar Foco ↕️';
-        }
-
+        
+        // Função de toggle view removida para simplificar, já que não era o foco.
         window.addEventListener('pageshow', (event) => {
             if (event.persisted) { window.location.reload(); }
         });
