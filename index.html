@@ -9,10 +9,8 @@
     <style>
         :root {
             --camera-height-default: 58.5vh;
-            /* ALTERAÇÃO: Altura da visão de foco aumentada em 20% (de 21vh para 25.2vh) */
             --camera-height-narrow: 25.2vh; 
         }
-
         body, html {
             margin: 0;
             padding: 0;
@@ -28,11 +26,9 @@
             justify-content: flex-start;
             padding-top: 2vh;
         }
-
         body.narrow-view #webcam-container {
             height: var(--camera-height-narrow);
         }
-
         #webcam-container {
             width: 95vw;
             height: var(--camera-height-default);
@@ -45,7 +41,6 @@
             overflow: hidden;
             transition: height 0.4s ease, width 0.4s ease;
         }
-
         #webcam-container canvas {
             width: 100%;
             height: 100%;
@@ -56,19 +51,17 @@
             transition: border-color 0.5s ease;
             transform-origin: center;
         }
-
         #alerta {
             height: 10vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(20px, 5vw, 28px);
+            font-size: clamp(18px, 4vw, 24px); /* Ajustado para caber mais texto */
             font-weight: bold;
             color: #ffc107;
             text-align: center;
             padding: 0 10px;
         }
-
         #label-container {
             position: fixed;
             top: 15px;
@@ -81,7 +74,6 @@
             z-index: 10;
             backdrop-filter: blur(5px);
         }
-
         .footer-controls {
             width: 100%;
             position: fixed;
@@ -93,14 +85,12 @@
             box-sizing: border-box;
             background: #1a1a1a;
         }
-        
         .focus-control {
             display: flex;
             justify-content: center;
             margin-bottom: 15px;
             width: 60%;
         }
-
         button {
             height: 50px;
             font-size: clamp(16px, 4vw, 20px);
@@ -114,20 +104,16 @@
             margin: 0 10px;
             padding: 0 25px;
         }
-        
         #startButton {
             width: 80%;
             height: 55px;
         }
-
         button:hover, button:active {
             background: #007bff;
         }
-        
         button:active {
             transform: scale(0.97);
         }
-
         button:disabled {
             background: #55555550;
             border-color: #555;
@@ -151,34 +137,24 @@
 
     <script type="text/javascript">
         // =========================================================================
-        // PASSO 1: ATUALIZE O LINK DO SEU MODELO AQUI
+        // PASSO 1: LINK DO MODELO (MANTIDO)
         // =========================================================================
         const URL = "https://teachablemachine.withgoogle.com/models/gah_QgM4j/";
 
         // =========================================================================
-        // PASSO 2: MAPEIE OS NOMES DAS CLASSES PARA OS LINKS DE COMPRA
+        // Objeto 'partUrls' removido pois não é mais necessário.
         // =========================================================================
-        const partUrls = {
-            "PORTA": "https://lista.mercadolivre.com.br/portas-de-carro",
-            "PNEU": "https://produto.mercadolivre.com.br/MLB-5249535452-roda-aro-16-honda-civic-2012-2013-2014-5x114-pneu-_JM",
-            "LANTERNA TRASEIRA": "https://produto.mercadolivre.com.br/MLB-5447314524-sinaleira-traseira-civic-2012-2013-2014-super-promoco-_JM",
-            "VIDRO DANIFICADO": "https://lista.mercadolivre.com.br/parabrisa-e-janelas-de-carro",
-            "PARA-CHOQUE": "https://produto.mercadolivre.com.br/MLB-3965167941-para-choque-traseiro-honda-civic-2012-a-2016-_JM",
-            "PARA-LAMA": "https://lista.mercadolivre.com.br/para-lama-de-carro",
-            "RETROVISOR": "https://produto.mercadolivre.com.br/MLB-3968002165-retrovisor-civic-2012-2013-2014-2015-2016-eletrico-sem-pisca-_JM",
-            "FAROL": "https://produto.mercadolivre.com.br/MLB-4281237516-farol-new-civic-2012-2013-2014-2015-2016-foco-duplo-_JM"
-        };
         
-        // ALTERAÇÃO: Limites de probabilidade customizados por peça
+        // Limites de probabilidade customizados por peça (MANTIDO)
         const customThresholds = {
-            "RETROVISOR": 0.80,    // 80%
-            "FAROL": 0.80,         // 80%
-            "PARA-CHOQUE": 0.97,  // 97%
-            "PORTA": 0.97,        // 97%
-            "PNEU": 0.85,        // 85%
-            "LANTERNA TRASEIRA": 0.80    // 80%
-            };
-        // Limite padrão para outras peças não listadas acima
+            "RETROVISOR": 0.80,
+            "FAROL": 0.80,
+            "PARA-CHOQUE": 0.97,
+            "PORTA": 0.97,
+            "PNEU": 0.85,
+            "LANTERNA TRASEIRA": 0.80
+        };
+        // Limite padrão para outras peças
         const defaultThreshold = 0.992; 
 
         let model, webcam, maxPredictions;
@@ -259,6 +235,18 @@
             }
         }
 
+        // Função de fallback para abrir o WhatsApp manualmente
+        function openWhatsAppManually(message, partName) {
+            alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${partName}</strong>. <br>Seu navegador não suporta o envio automático da imagem. Redirecionando... <br>Por favor, anexe a imagem na conversa.`;
+            const encodedMessage = encodeURIComponent(message);
+            const phoneNumber = '5524998132856';
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            
+            setTimeout(() => {
+                window.open(whatsappUrl, '_blank'); 
+            }, 4500); // Atraso para o usuário ler a instrução
+        }
+
         async function predict() {
             if (!model || !webcam || !webcam.canvas || isRedirecting || !isPredictionActive) return;
 
@@ -272,28 +260,52 @@
             }
 
             if (labelContainer) {
-                 labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
+                labelContainer.innerHTML = `Detectando: ${highestPrediction.className} (${(highestPrediction.probability * 100).toFixed(1)}%)`;
             }
 
             const classNameUpperCase = highestPrediction.className.toUpperCase();
-            
-            // ALTERAÇÃO: Determina o limite de probabilidade a ser usado
-            // Se a peça tem um limite customizado, usa esse valor. Senão, usa o padrão.
             const threshold = customThresholds[classNameUpperCase] || defaultThreshold;
 
-            // ALTERAÇÃO: Usa o 'threshold' dinâmico na verificação
-            if (partUrls[classNameUpperCase] && highestPrediction.probability >= threshold) {
+            // Condição para acionar o envio para o WhatsApp
+            if (customThresholds[classNameUpperCase] && highestPrediction.probability >= threshold) {
                 isRedirecting = true;
-                if (webcam) webcam.stop();
+                if (webcam) {
+                    webcam.stop(); // Para a câmera para "congelar" a imagem da peça
+                }
 
-                const url = partUrls[classNameUpperCase];
-                alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${highestPrediction.className}</strong>`;
-                
-                if (webcam.canvas) webcam.canvas.style.borderColor = "#28a745";
+                const partName = highestPrediction.className;
+                if (webcam.canvas) webcam.canvas.style.borderColor = "#28a745"; 
 
-                setTimeout(() => {
-                    window.location.href = url;
-                }, 2500);
+                const message = `Olá! Gostaria de saber se você tem essa peça (${partName}) pra vender.`;
+
+                // Tenta usar a API de Compartilhamento Web (Web Share API)
+                webcam.canvas.toBlob(async (blob) => {
+                    const file = new File([blob], `${partName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+                    const shareData = {
+                        text: message,
+                        files: [file]
+                    };
+
+                    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                        alertaDiv.innerHTML = `✅ Peça Identificada: <strong>${partName}</strong>. <br>Abrindo menu para compartilhar...`;
+                        try {
+                            await navigator.share(shareData);
+                            alertaDiv.innerHTML = `✅ Consulta enviada!`;
+                        } catch (err) {
+                            console.error('Erro ao compartilhar:', err);
+                            if (err.name === 'AbortError') {
+                                alertaDiv.innerHTML = 'Compartilhamento cancelado. Clique em "Reiniciar Câmera" para tentar novamente.';
+                                startButton.disabled = false; // Reabilita o botão de reiniciar
+                            } else {
+                                // Fallback em caso de outro erro no compartilhamento
+                                openWhatsAppManually(message, partName);
+                            }
+                        }
+                    } else {
+                        // Fallback para navegadores que não suportam a API ou o compartilhamento de arquivos
+                        openWhatsAppManually(message, partName);
+                    }
+                }, 'image/png');
             }
         }
 
