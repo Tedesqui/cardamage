@@ -48,7 +48,6 @@
             display: flex; flex-direction: column; align-items: center;
             padding: 10px; box-sizing: border-box; background: #1a1a1a;
         }
-        /* MODIFICAÇÃO: Botões lado a lado no final */
         .button-group {
             display: flex;
             justify-content: space-around;
@@ -56,16 +55,16 @@
             margin-bottom: 15px;
         }
         button {
-            font-size: clamp(14px, 3.5vw, 18px); /* Fonte um pouco menor */
+            font-size: clamp(14px, 3.5vw, 18px);
             border-radius: 12px; border: 2px solid #007bff;
             background: #007bff20; color: #fff; cursor: pointer;
             font-weight: bold; transition: background-color 0.3s, transform 0.1s;
             padding: 10px 15px;
-            height: 60px; /* Altura aumentada */
-            flex-grow: 1; /* Para ocupar espaço */
-            margin: 0 5px; /* Espaçamento entre botões */
+            height: 60px;
+            flex-grow: 1;
+            margin: 0 5px;
         }
-        #initButton { width: 80%; height: 55px; } /* Botão inicial grande */
+        #initButton { width: 80%; height: 55px; }
         button:hover, button:active { background: #007bff; }
         button:active { transform: scale(0.97); }
         button:disabled {
@@ -82,8 +81,8 @@
 
     <div class="footer-controls">
         <div class="button-group" id="final-buttons" style="display: none;">
-            <button id="saveButton">✅ 1: Salvar Imagem</button>
-            <button id="whatsappButton">➡️ 2: Pedir Orçamento</button>
+            <button id="saveButton">✅ 1. Salvar Imagem</button>
+            <button id="whatsappButton">➡️ 2. Pedir Orçamento</button>
         </div>
         <button id="initButton" onclick="init()">Ligar Câmera</button>
     </div>
@@ -98,6 +97,9 @@
 
         let model, webcam, isLooping = false, isPredictionActive = false;
         
+        // *** NOVA ALTERAÇÃO: Variável para controlar se a imagem foi salva ***
+        let isImageSaved = false;
+
         const labelContainer = document.getElementById("label-container");
         const initButton = document.getElementById("initButton");
         const webcamContainer = document.getElementById("webcam-container");
@@ -143,7 +145,6 @@
             }
         }
 
-        // NOVA FUNÇÃO PARA SALVAR O CONTEÚDO DO CANVAS
         function saveCanvasAsImage(canvasElement, filename) {
             const link = document.createElement('a');
             link.href = canvasElement.toDataURL('image/png');
@@ -153,9 +154,12 @@
             link.click();
             document.body.removeChild(link);
             
-            alertaDiv.innerHTML = "<b>Imagem salva!</b><br>Agora clique em 'Abrir WhatsApp'.";
+            alertaDiv.innerHTML = "<b>Imagem salva!</b><br>Agora clique em 'Pedir Orçamento'.";
             saveButton.disabled = true;
             saveButton.style.borderColor = '#28a745';
+            
+            // *** NOVA ALTERAÇÃO: Marca que a imagem foi salva ***
+            isImageSaved = true;
         }
 
         async function predict() {
@@ -191,11 +195,18 @@
                 
                 // Configura as ações dos novos botões
                 saveButton.onclick = () => saveCanvasAsImage(canvas, partName);
-                whatsappButton.onclick = () => window.open(whatsappUrl, '_blank');
+                
+                // *** NOVA ALTERAÇÃO: Adiciona a verificação no botão do WhatsApp ***
+                whatsappButton.onclick = () => {
+                    if (isImageSaved) {
+                        window.open(whatsappUrl, '_blank');
+                    } else {
+                        alertaDiv.innerHTML = "🔴<br><strong>Por favor, clique primeiro em 'Salvar Imagem'!</strong>";
+                    }
+                };
             }
         }
-        
-        // Função de toggle view removida para simplificar, já que não era o foco.
+
         window.addEventListener('pageshow', (event) => {
             if (event.persisted) { window.location.reload(); }
         });
